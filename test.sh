@@ -34,6 +34,9 @@ mostra()  { if [ "$plain" = 1 ]; then sem_cor; else cat; fi; }
 total=0
 falhas=0
 
+tmp_valida=$(mktemp -t statusline-valida).ps1
+trap 'rm -f "$tmp_valida" "${tmp_valida%.ps1}"' EXIT
+
 # caso <nome> <json>
 caso() {
   local nome=$1 json=$2 saida_sh saida_ps
@@ -115,9 +118,61 @@ for pct in 0 1 2 3 5 6 8 12 25 27 33 50 66 75 88 99 100; do
   printf '    %3s%%  %s\n' "$pct" "${linha#⏳ }" | mostra
 done
 
+# Os dois caminhos de instalação entregam o .ps1 de jeitos diferentes, e o
+# parser do PowerShell não vê a mesma coisa nos dois. O `-File` lê do disco e
+# descarta o BOM. O `irm | iex` passa a string com o BOM dentro, e um BOM na
+# frente de um bloco `<# #>` de várias linhas faz o PowerShell parar de ler o
+# bloco como comentário. Cada arquivo é conferido nos dois caminhos.
+if [ -n "$ps" ]; then
+  printf '\n\033[1m%2d. os .ps1 nos dois caminhos de entrega\033[0m\n' "$(( total + 1 ))" | mostra
+  total=$(( total + 1 ))
+  cat > "$tmp_valida" <<'PSVALIDA'
+$falhou = 0
+function Diz($ok, $texto) {
+  if ($ok) { Write-Host ("    " + [char]0x2713 + " " + $texto) -ForegroundColor Green }
+  else     { Write-Host ("    " + [char]0x2717 + " " + $texto) -ForegroundColor Red; $script:falhou++ }
+}
+function Erros($txt) {
+  $e = $null; $t = $null
+  [System.Management.Automation.Language.Parser]::ParseInput($txt, [ref]$t, [ref]$e) | Out-Null
+  return $e
+}
+foreach ($nome in @('statusline.ps1', 'install.ps1')) {
+  $caminho = Join-Path $args[0] $nome
+  $bytes = [System.IO.File]::ReadAllBytes($caminho)
+  $temBom = ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF)
+  $soAscii = -not ($bytes | Where-Object { $_ -gt 0x7F })
+
+  # caminho `-File`: o PowerShell lê do disco e tira o BOM
+  $e = $null; $t = $null
+  [System.Management.Automation.Language.Parser]::ParseFile($caminho, [ref]$t, [ref]$e) | Out-Null
+  Diz (-not $e -or $e.Count -eq 0) "$nome parseia via -File"
+
+  # caminho `irm | iex`: a string chega com o BOM
+  $comBom = [System.Text.Encoding]::UTF8.GetString($bytes)
+  $e2 = Erros $comBom
+  Diz (-not $e2 -or $e2.Count -eq 0) "$nome parseia via irm | iex$(if ($e2) { ' (linha ' + $e2[0].Extent.StartLineNumber + ' char ' + $e2[0].Extent.StartColumnNumber + ': ' + $e2[0].Message + ')' })"
+
+  if ($nome -eq 'install.ps1') {
+    # Sem BOM o Windows PowerShell 5.1 lê o arquivo do disco como ANSI. Em
+    # ASCII puro isso dá exatamente os mesmos bytes, então não há o que estragar.
+    Diz (-not $temBom) 'install.ps1 sem BOM, que o iex nao tolera na frente de <# #>'
+    Diz $soAscii       'install.ps1 em ASCII puro, imune ao code page do 5.1'
+  } else {
+    # A barra e os emojis precisam do BOM para o 5.1 não ler o arquivo em ANSI.
+    Diz $temBom 'statusline.ps1 com BOM, que o 5.1 precisa para os blocos e emojis'
+  }
+}
+exit $falhou
+PSVALIDA
+  if "$ps" -NoProfile -File "$tmp_valida" "$PWD" 2>&1 | mostra; then :; else
+    falhas=$(( falhas + 1 ))
+  fi
+fi
+
 printf '\n' | mostra
 if [ -n "$ps" ] && [ "$falhas" -gt 0 ]; then
-  printf '\033[31m%d de %d casos divergiram entre bash e PowerShell.\033[0m\n' "$falhas" "$total" | mostra
+  printf '\033[31m%d de %d casos falharam.\033[0m\n' "$falhas" "$total" | mostra
   exit 1
 fi
 if [ -n "$ps" ]; then

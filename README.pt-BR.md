@@ -144,12 +144,12 @@ statusline  bash 3.2.57  |  pwsh 7.5.4
 
  1. payload completo
     🧠 Opus 5 | 📁 valoer-infra | 🌿 main
-    📊 ctx ██▏░░░░░ 27% | ⏳ 5h ███▉░░░░ 49% (2h 22min) (Dom 20:40) | 📅 sem ███▎░░░░ 42% (3d 23h) (Qui 17:58)
+    📊 ctx ██▏░░░░░ 27% | ⏳ 5h ███▉░░░░ 49% (2h 22min) (Dom 21:15) | 📅 sem ███▎░░░░ 42% (3d 23h) (Qui 18:33)
     ✓ ps1 idêntico
 
  2. fora de repositório git (sem branch)
     🧠 Sonnet 5 | 📁 tmp
-    📊 ctx ▏░░░░░░░ 2% | ⏳ 5h ▏░░░░░░░ 3% (2h 22min) (Dom 20:40) | 📅 sem ▉░░░░░░░ 11% (3d 23h) (Qui 17:58)
+    📊 ctx ▏░░░░░░░ 2% | ⏳ 5h ▏░░░░░░░ 3% (2h 22min) (Dom 21:15) | 📅 sem ▉░░░░░░░ 11% (3d 23h) (Qui 18:33)
     ✓ ps1 idêntico
 
  3. sem rate limits no payload
@@ -159,27 +159,27 @@ statusline  bash 3.2.57  |  pwsh 7.5.4
 
  4. só rate limits, sem contexto
     🧠 Opus 5 | 📁 api
-    ⏳ 5h ███████░ 88% (2h 22min) (Dom 20:40) | 📅 sem ███████▊ 97% (3d 23h) (Qui 17:58)
+    ⏳ 5h ███████░ 88% (2h 22min) (Dom 21:15) | 📅 sem ███████▊ 97% (3d 23h) (Qui 18:33)
     ✓ ps1 idêntico
 
  5. extremos: barra vazia e barra cheia
     🧠 Opus 5 | 📁 api
-    📊 ctx ░░░░░░░░ 0% | ⏳ 5h ░░░░░░░░ 0% (2h 22min) (Dom 20:40) | 📅 sem ████████ 100% (3d 23h) (Qui 17:58)
+    📊 ctx ░░░░░░░░ 0% | ⏳ 5h ░░░░░░░░ 0% (2h 22min) (Dom 21:15) | 📅 sem ████████ 100% (3d 23h) (Qui 18:33)
     ✓ ps1 idêntico
 
  6. percentual fracionário (trunca, não arredonda)
     🧠 Opus 5 | 📁 api
-    📊 ctx █████░░░ 64% | ⏳ 5h ▉░░░░░░░ 12% (2h 22min) (Dom 20:40) | 📅 sem █████▎░░ 66% (3d 23h) (Qui 17:58)
+    📊 ctx █████░░░ 64% | ⏳ 5h ▉░░░░░░░ 12% (2h 22min) (Dom 21:15) | 📅 sem █████▎░░ 66% (3d 23h) (Qui 18:33)
     ✓ ps1 idêntico
 
  7. reset já vencido (não vai a negativo)
     🧠 Opus 5 | 📁 api
-    ⏳ 5h ▍░░░░░░░ 5% (0min) (Dom 18:08) | 📅 sem ▋░░░░░░░ 9% (0min) (Dom 18:08)
+    ⏳ 5h ▍░░░░░░░ 5% (0min) (Dom 18:43) | 📅 sem ▋░░░░░░░ 9% (0min) (Dom 18:43)
     ✓ ps1 idêntico
 
  8. percentual acima de 100 (limite de gasto estourado)
     🧠 Opus 5 | 📁 api
-    ⏳ 5h ████████ 100% (2h 22min) (Dom 20:40) | 📅 sem ████████ 100% (3d 23h) (Qui 17:58)
+    ⏳ 5h ████████ 100% (2h 22min) (Dom 21:15) | 📅 sem ████████ 100% (3d 23h) (Qui 18:33)
     ✓ ps1 idêntico
 
  9. session_id sujo cai no diretório default
@@ -219,7 +219,16 @@ statusline  bash 3.2.57  |  pwsh 7.5.4
      99%  5h ███████▉ 99%
     100%  5h ████████ 100%
 
-13 casos, bash e PowerShell com a mesma saída.
+14. os .ps1 nos dois caminhos de entrega
+    ✓ statusline.ps1 parseia via -File
+    ✓ statusline.ps1 parseia via irm | iex
+    ✓ statusline.ps1 com BOM, que o 5.1 precisa para os blocos e emojis
+    ✓ install.ps1 parseia via -File
+    ✓ install.ps1 parseia via irm | iex
+    ✓ install.ps1 sem BOM, que o iex nao tolera na frente de <# #>
+    ✓ install.ps1 em ASCII puro, imune ao code page do 5.1
+
+14 casos, bash e PowerShell com a mesma saída.
 ```
 
 ## As barras
