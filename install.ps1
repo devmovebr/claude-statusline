@@ -72,10 +72,13 @@ if ($errors -and $errors.Count -gt 0) {
 
 New-Item -ItemType Directory -Path $claudeDir -Force | Out-Null
 
+# Get-FileHash rather than SequenceEqual: calling a generic LINQ method without
+# spelling out the type argument is something Windows PowerShell 5.1 often
+# refuses to resolve, and this runs on every reinstall.
 if (Test-Path -LiteralPath $target) {
-  $old = [System.IO.File]::ReadAllBytes($target)
-  $new = [System.IO.File]::ReadAllBytes($source)
-  if (-not [System.Linq.Enumerable]::SequenceEqual($old, $new)) {
+  $old = (Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash
+  $new = (Get-FileHash -LiteralPath $source -Algorithm SHA256).Hash
+  if ($old -ne $new) {
     Copy-Item -LiteralPath $target -Destination "$target.bak-$stamp" -Force
     Write-Host "previous status line kept at $target.bak-$stamp"
   }
